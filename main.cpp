@@ -23,14 +23,12 @@ int logCommit(std::string msg) {
 }
 
 int main(int argc, char* argv[]) {
-	std::cout << "Entered custom git wrapper\n";
-
   std::vector<char*> execArgs;
   execArgs.push_back((char*)"/usr/bin/git"); 
   for (int i = 1; i < argc; ++i) {
     execArgs.push_back(argv[i]);  
   }
-  execArgs.push_back(nullptr);  
+  execArgs.push_back(nullptr);
 
   for (int i = 0; i < (int)execArgs.size(); i += 1) {
   	printf("%s ", execArgs[i]);
