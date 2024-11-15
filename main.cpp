@@ -37,17 +37,20 @@ int main(int argc, char* argv[]) {
 
   pid_t pid = fork();
   if (pid == 0) {
+  	//child process to execute git
   	execvp(execArgs[0], execArgs.data());
   	perror("Error executing git");
   	return 1;
   }
   else if (pid > 0) {
+		//Log if commit is made
 		if (argc > 2) {
 		  if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
 		  	logCommit(execArgs[3]);
 			}
 		}
 
+		//Wait for child process to exit
     int status;
     waitpid(pid, &status, 0);
     if (WIFSIGNALED(status)) {
