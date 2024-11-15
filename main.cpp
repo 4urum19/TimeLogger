@@ -9,7 +9,7 @@
 int logCommit(std::string msg) {
 	std::ofstream logFile("log.txt", std::ios_base::app);
 	if (!logFile.is_open()) {
-		std::cerr << "Failed to open log\n";
+		perror("Failed to open log");
 		return 1;
 	}
 
@@ -34,17 +34,22 @@ int main(int argc, char* argv[]) {
   }
   execArgs.push_back(nullptr);
 
-  for (int i = 0; i < (int)execArgs.size(); i += 1) {
-  	printf("%s ", execArgs[i]);
-  } printf("\n");
-
-  if (argc > 2) {
-	  if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
-	  	logCommit(execArgs[3]);
-  	}
+  pid_t pid = fork();
+  if (pid == 0) {
+  	execvp(execArgs[0], execArgs.data());
+  	perror("Error executing git");
+  	return 1;
   }
+  else if (pid > 0) {
+		if (argc > 2) {
+		  if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
+		  	logCommit(execArgs[3]);
+			}
+		}
+  }
+  else {
+  	perror("Fork failed");
+  } 
 
-  execvp(execArgs[0], execArgs.data());
-  perror("Error executing git");
-  return 1;
+  return 0;
 }
