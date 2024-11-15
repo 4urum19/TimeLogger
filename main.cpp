@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <vector>
 #include <cstring>
+#include <sys/wait.h>
 
 int logCommit(std::string msg) {
 	std::ofstream logFile("log.txt", std::ios_base::app);
@@ -46,6 +47,12 @@ int main(int argc, char* argv[]) {
 		  	logCommit(execArgs[3]);
 			}
 		}
+
+    int status;
+    waitpid(pid, &status, 0);
+    if (WIFSIGNALED(status)) {
+        std::cout << "Git was terminated by signal " << WTERMSIG(status) << "\n";
+    }
   }
   else {
   	perror("Fork failed");
