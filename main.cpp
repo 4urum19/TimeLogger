@@ -7,7 +7,7 @@
 #include <cstring>
 
 int logCommit(std::string msg) {
-	std::ofstream logFile("log.txt", std::ios_base::in);
+	std::ofstream logFile("log.txt", std::ios_base::app);
 	if (!logFile.is_open()) {
 		std::cerr << "Failed to open log\n";
 		return 1;
