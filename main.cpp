@@ -14,9 +14,13 @@ int logCommit(std::string msg) {
 	}
 
 	auto now = std::chrono::system_clock::now();
-	std::time_t curTime = std::chrono::system_clock::to_time_t(now);
-	
-	logFile << '[' << std::ctime(&curTime) << "] " << msg << '\n';
+	auto nowT = std::chrono::system_clock::to_time_t(now);
+	std::string nowStr = std::ctime(&nowT);
+	if (!nowStr.empty() && nowStr.back() == '\n') {
+		nowStr.pop_back();
+	}
+
+	logFile << '[' << nowStr << "] '" << msg << "'\n";
 	logFile.close();
 
 	return 0;
