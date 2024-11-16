@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
 		//Log if commit is made
 		if (argc > 2) {
 		  if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
+		  	std::cerr << "Logging " << execArgs[3] << '\n';
 		  	logCommit(execArgs[3]);
 			}
 		}
