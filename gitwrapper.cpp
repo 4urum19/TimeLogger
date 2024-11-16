@@ -24,6 +24,9 @@ int logCommit(std::string msg) {
 	logFile << '[' << nowStr << "] '" << msg << "'\n";
 	logFile.close();
 
+	std::cerr << "Added:\n";
+	std::cerr << '[' << nowStr << "] '" << msg << "'\n";
+
 	return 0;
 }
 
