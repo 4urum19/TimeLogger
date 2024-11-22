@@ -46,11 +46,10 @@ std::string timeSpent(
     auto diff = std::difftime(nowTimeT, lastTimeT);
     int hours = static_cast<int>(diff) / 3600;
     int minutes = (static_cast<int>(diff) % 3600) / 60;
-    int seconds = static_cast<int>(diff) % 60;
 
     std::ostringstream timeSpentStr;
-    timeSpentStr << hours << "h " << minutes << "m " << seconds << "s";
-    std::cout << hours << "h " << minutes << "m " << seconds << "s" << '\n';
+    timeSpentStr << hours << "h " << minutes << "m";
+    std::cout << hours << "h " << minutes << "m " << '\n';
     return timeSpentStr.str();
   }
 
