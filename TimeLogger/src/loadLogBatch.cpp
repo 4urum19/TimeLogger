@@ -3,6 +3,7 @@
 #include <ctime>
 #include <chrono>
 #include <vector>
+#include <array>
 
 #include <QFile>
 #include <QTextStream>
@@ -13,16 +14,6 @@
 
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-
-std::string getCurrentTime() {
-  auto now = std::chrono::system_clock::now();
-  auto nowT = std::chrono::system_clock::to_time_t(now);
-  std::string nowStr = std::ctime(&nowT);
-  if (!nowStr.empty() && nowStr.back() == '\n') {
-    nowStr.pop_back();
-  }
-  return nowStr;
-}
 
 QStringList readLines(QFile &file, const int startLine, const int batchSize) {
   QStringList lines;
@@ -74,6 +65,8 @@ int MainWindow::loadLogBatch(const int startLine, const int batchSize) {
     return 0;
   }
 
+  std::array<QString, 2> meta{"Started", "Stopped"};
+
   QString lastTimeStamp;
   QRegularExpression reg(R"(\[(.*)\] '(.*)')");
   QRegularExpressionMatch match;
@@ -90,11 +83,15 @@ int MainWindow::loadLogBatch(const int startLine, const int batchSize) {
       ui->logTable->insertRow(row);
       ui->logTable->setItem(row, 0, new QTableWidgetItem(timeStamp));
 
-      if (!lastTimeStamp.isEmpty()) {
+      if (!lastTimeStamp.isEmpty() 
+        && !std::find(std::begin(meta), std::end(meta), commitMsg)) 
+      {
         QDateTime lastTime = QDateTime::fromString(lastTimeStamp, "ddd MMM d HH:mm:ss yyyy");
         QDateTime newTime = QDateTime::fromString(timeStamp, "ddd MMM d HH:mm:ss yyyy");
 
-        if (lastTime.isValid() && newTime.isValid()) {
+        if (lastTime.isValid() 
+          && newTime.isValid()) 
+        {
           qint64 secondsDiff = newTime.secsTo(lastTime);
           qint64 hours = secondsDiff / 3600;
           qint64 minutes = (secondsDiff % 3600) / 60;
@@ -117,60 +114,4 @@ int MainWindow::loadLogBatch(const int startLine, const int batchSize) {
   }
 
   return lines.size();
-}
-
-void MainWindow::on_startButton_clicked() {
-  std::ofstream logFile("../log.txt", std::ios_base::app);
-  if (!logFile.is_open()) {
-    perror("Failed to open log");
-    return;
-  }
-  std::string nowStr = getCurrentTime();
-
-  logFile << '[' << nowStr << "] 'Started'\n";
-  logFile.close();
-}
-
-void MainWindow::on_stopButton_clicked() {
-  std::ofstream logFile("../log.txt", std::ios_base::app);
-  if (!logFile.is_open()) {
-    perror("Failed to open log");
-    return;
-  }
-  std::string nowStr = getCurrentTime();
-
-  logFile << '[' << nowStr << "] 'Stopped'\n";
-  logFile.close();
-}
-
-void MainWindow::onScroll(int value) {
-  QScrollBar *scrollBar = ui->logTable->verticalScrollBar();
-  if (value == scrollBar->maximum()) {
-    static int startLine = 0;
-    int batchSize = 100;
-
-    int loadedRows = loadLogBatch(startLine, batchSize);
-    if (loadedRows > 0) {
-        startLine += loadedRows;
-    } 
-  }
-}
-
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-{
-  ui->setupUi(this);
-
-  int loadedRows = loadLogBatch(0, 100);
-  if (loadedRows < 0) {
-    QMessageBox::warning(this, "Error", "Failed to parse batch.");
-  }
-
-  connect(ui->logTable->verticalScrollBar(), &QScrollBar::valueChanged, this, &MainWindow::onScroll);
-}
-
-MainWindow::~MainWindow()
-{
-    delete ui;
 }
