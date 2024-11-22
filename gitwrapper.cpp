@@ -6,8 +6,13 @@
 #include <vector>
 #include <cstring>
 #include <sys/wait.h>
+#include <filesystem>
 
 int logCommit(std::string msg) {
+	auto execPath = std::filesystem::canonical("/proc/self/exe");
+
+	std::cout << execPath << '\n';
+
 	std::ofstream logFile("log.txt", std::ios_base::app);
 	if (!logFile.is_open()) {
 		perror("Failed to open log");
