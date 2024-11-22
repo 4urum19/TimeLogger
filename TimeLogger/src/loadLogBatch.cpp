@@ -42,10 +42,14 @@ QStringList readLines(QFile &file, const int startLine, const int batchSize) {
     file.seek(currentPos);
     line = file.readLine();
     lines.append(line);
-    std::cout << (string)line << '\n';
   }
 
   return lines;
+}
+
+QString calcTimeSpent() {
+  QString timeStr;
+  return timeStr;
 }
 
 int MainWindow::loadLogBatch(const int startLine, const int batchSize) {
@@ -85,7 +89,7 @@ int MainWindow::loadLogBatch(const int startLine, const int batchSize) {
       ui->logTable->setItem(row, 0, new QTableWidgetItem(timeStamp));
 
       if (!lastTimeStamp.isEmpty() 
-        && !std::find(std::begin(meta), std::end(meta), commitMsg)) 
+        && std::find(std::begin(meta), std::end(meta), commitMsg) == std::end(meta)) 
       {
         QDateTime lastTime = QDateTime::fromString(lastTimeStamp, "ddd MMM d HH:mm:ss yyyy");
         QDateTime newTime = QDateTime::fromString(timeStamp, "ddd MMM d HH:mm:ss yyyy");
