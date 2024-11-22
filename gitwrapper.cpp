@@ -9,7 +9,7 @@
 #include <filesystem>
 
 int logCommit(std::string msg) {
-	auto execPath = std::filesystem::canonical("/proc/self/exe").root_directory();
+	auto execPath = std::filesystem::canonical("/proc/self/exe").parent_path();
 	std::string logFileName = execPath.string() + "/log.txt";
 
 	std::cout << logFileName << '\n';
