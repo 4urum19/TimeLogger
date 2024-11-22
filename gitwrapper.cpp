@@ -50,6 +50,7 @@ std::string timeSpent(
 
     std::ostringstream timeSpentStr;
     timeSpentStr << hours << "h " << minutes << "m " << seconds << "s";
+    std::cout << hours << "h " << minutes << "m " << seconds << "s" << '\n';
     return timeSpentStr.str();
   }
 
