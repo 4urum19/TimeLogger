@@ -42,6 +42,7 @@ QStringList readLines(QFile &file, const int startLine, const int batchSize) {
     file.seek(currentPos);
     line = file.readLine();
     lines.append(line);
+    std::cout << (string)line << '\n';
   }
 
   return lines;
