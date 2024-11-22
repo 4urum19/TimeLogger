@@ -10,10 +10,9 @@
 
 int logCommit(std::string msg) {
 	auto execPath = std::filesystem::canonical("/proc/self/exe");
+	execPath /= "log.txt";
 
-	std::cout << execPath << '\n';
-
-	std::ofstream logFile("log.txt", std::ios_base::app);
+	std::ofstream logFile(execPath, std::ios_base::app);
 	if (!logFile.is_open()) {
 		perror("Failed to open log");
 		return 1;
