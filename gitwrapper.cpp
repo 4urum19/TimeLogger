@@ -9,21 +9,22 @@
 #include <sys/wait.h>
 #include <filesystem>
 
-bool isNewDay(std::string logFileName) {
-	std::cout << logFileName << '\n';
-
-	std::fstream logFile(logFileName, std::ios_base::ate);
+std::string isNewDay(std::string logFileName) {
+	std::fstream logFile(logFileName, std::ios_base::in);
 	if (!logFile.is_open()) {
 		perror("Failed to open log");
-		return false;
-	}	
+		return "";
+	}
 
-	std::string lastLine;
-	std::getline(logFile, lastLine);
-	std::cout << lastLine << '\n';
+  std::string lastLine = "";
+  if (logFile.tellg() > 0) {
+    logFile.seekg(-1, std::ios_base::end); 
+    std::getline(logFile, lastLine);     
+  }
 
+  std::cout << lastLine << '\n';
 
-	return true;
+	return lastLine;
 }
 
 int logCommit(std::string msg) {
