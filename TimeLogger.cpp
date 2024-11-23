@@ -5,54 +5,6 @@
 #include <filesystem>
 #include <iomanip>
 
-// std::string timeSpent(
-// 	const std::time_t nowTimeT, 
-// 	const std::string logFileName) 
-// {
-// 	std::ifstream logFile(logFileName);
-// 	if (!logFile.is_open()) {
-// 		perror("Failed to open log");
-// 		return "-1";
-// 	}
-// 	std::string line;
-// 	std::string lastLine;
-//   while (std::getline(logFile, line)) {
-//     if (!line.empty()) {
-//       lastLine = line;
-//     }
-//   }
-//   logFile.close();
-
-//   std::regex reg(R"(\[(.*)\] - \[(.*)\] '(.*)')");
-//   std::smatch match;
-
-//   if (std::regex_match(lastLine, match, reg)) {
-//   	std::string lastTimeStampStr = match[1].str();
-
-//     std::tm lastTimeTm = {};
-//     std::istringstream ss(lastTimeStampStr);
-//     ss >> std::get_time(&lastTimeTm, "%a %b %d %H:%M:%S %Y");
-//     if (ss.fail()) {
-//       std::cerr << "Failed to parse timestamp: " << lastTimeStampStr << '\n';
-//       return "-1";
-//     }
-
-//     auto lastTimeT = std::mktime(&lastTimeTm);
-
-//     auto diff = std::difftime(nowTimeT, lastTimeT);
-//     int hours = static_cast<int>(diff) / 3600;
-//     int minutes = (static_cast<int>(diff) % 3600) / 60;
-
-//     std::ostringstream timeSpentStr;
-//     timeSpentStr << hours << "h " << minutes << "m";
-//     std::cout << hours << "h " << minutes << "m " << '\n';
-//     return timeSpentStr.str();
-//   }
-
-//   std::cerr << "No valid timestamp found in last log line\n";
-//   return "-1";
-// }
-
 std::string getCurrentDate() {
 	std::time_t now = std::time(NULL);
 	std::tm localTime;
@@ -77,19 +29,21 @@ int printLog(std::string date) {
 	std::smatch match;
 	regex_match(line, match, reg);
 
-	while (match[1] != date) {
-		regex_match(line, match, reg);
-		std::getline(logFile, line);
+	while (std::getline(logFile, line)) {
+    if (regex_match(line, match, reg) && match[1] == date) {
+      break;  
+    }
 		if (logFile.eof()) return 0;
 	}
 
 	std::ostringstream oss;
 	oss << match[1] << ":\n";
 	while (match[1] == date) {
-		oss << std::setw(8) << match[2] << " | " 
-				<< match[3] << '\n';
+    if (regex_match(line, match, reg) && match[1] == date) {
+ 			oss << std::setw(8) << std::setfill(' ') << match[2] << " | " 
+					<< match[3] << '\n';
+    }
 		std::getline(logFile, line);
-		regex_match(line, match, reg);
 		if (logFile.eof()) break;
 	}
 	std::cout << oss.str();
@@ -98,11 +52,12 @@ int printLog(std::string date) {
 }
 
 int main(int argc, char* argv[]) {
-	const char* progName = argv[0];
+	clock_t tStart = clock();
 
 	std::string date = getCurrentDate();
+	std::string testDate = "23-11-2030";
+	printLog(testDate);
 
-	printLog("23-10-2023");
-
-	return printLog(date);
+	printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+	return 0;
 }
