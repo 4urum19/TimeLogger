@@ -10,7 +10,7 @@
 #include <filesystem>
 
 std::string isNewDay(std::string logFileName) {
-	std::fstream logFile(logFileName, std::ios_base::in);
+	std::fstream logFile(logFileName, std::ios_base::in | std::ios_base::ate);
 	if (!logFile.is_open()) {
 		perror("Failed to open log");
 		return "";
@@ -53,11 +53,9 @@ int logCommit(std::string msg) {
 	std::regex reg(R"([A-Za-z]+ ([A-Za-z]+) ([0-9]+) ([0-9:]+) ([0-9]+))");
 	std::smatch match;
 	if (std::regex_match(nowStr, match, reg)) {
-		std::cout << "enter reg";
 		curDate = (std::string)match[2] + " " + (std::string)match[1] + " " + (std::string)match[4];
 		curTime = match[3];
 	}
-
 
 
 	logFile << '[' << curTime << "] '" << msg << "'\n";
