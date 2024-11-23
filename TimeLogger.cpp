@@ -80,16 +80,19 @@ int printLog(std::string date) {
 	while (match[1] != date) {
 		regex_match(line, match, reg);
 		std::getline(logFile, line);
-		if (logFile.eof()) break;
+		if (logFile.eof()) return 0;
 	}
-	std::cout << match[1] << ":\n";
 
+	std::ostringstream oss;
+	oss << match[1] << ":\n";
 	while (match[1] == date) {
-		regex_match(line, match, reg);
-		std::cout << match[2] << "|" << match[3] << '\n';
+		oss << std::setw(8) << match[2] << " | " 
+				<< match[3] << '\n';
 		std::getline(logFile, line);
+		regex_match(line, match, reg);
 		if (logFile.eof()) break;
 	}
+	std::cout << oss.str();
 	return 0;
 }
 
