@@ -11,17 +11,26 @@
 
 std::string isNewDay(std::string logFileName) {
 	std::fstream logFile(logFileName, std::ios_base::in | std::ios_base::ate);
+	std::string lastLine = "";
+
 	if (!logFile.is_open()) {
 		perror("Failed to open log");
 		return "";
 	}
-	std::cout << "AAA\n";
 
-  std::string lastLine = "";
-  if (logFile.tellg() > 0) {
-    logFile.seekg(-1, std::ios_base::end); 
-    std::getline(logFile, lastLine);     
-  }
+	logFile.seekg(0, std::ios_base::end);
+	auto pos = logFile.tellg() - static_cast<std::iostream::pos_type>(1);
+	while(pos >= 0) {
+		logFile.seekg(pos);
+		char c;
+		logFile.get(c);
+		if (c == '\n') {
+			break;
+		}
+		pos -= 1;
+	}
+	logFile.seekg(pos);
+	std::getline(logFile, lastLine);
 
   std::cout << lastLine << '\n';
 
