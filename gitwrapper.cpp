@@ -9,8 +9,8 @@
 #include <sys/wait.h>
 #include <filesystem>
 
-std::string isNewDay(std::string logFileName) {
-	std::fstream logFile(logFileName, std::ios_base::in | std::ios_base::ate);
+std::string getLastLine(std::string logFileName) {
+	std::fstream logFile(logFileName, std::ios_base::in);
 	std::string lastLine = "";
 
 	if (!logFile.is_open()) {
@@ -20,12 +20,15 @@ std::string isNewDay(std::string logFileName) {
 
 	logFile.seekg(0, std::ios_base::end);
 	auto pos = logFile.tellg();
+	if (pos == 0) {
+		return "";
+	}
+
 	pos -= 2;
 	while(pos >= 0) {
 		logFile.seekg(pos);
 		char c;
 		logFile.get(c);
-		std::cout << c;
 		if (c == '\n') {
 			pos += 1;
 			logFile.seekg(pos);
@@ -34,8 +37,6 @@ std::string isNewDay(std::string logFileName) {
 		pos -= 1;
 	}
 	std::getline(logFile, lastLine);
-
-  std::cout << lastLine << '\n';
 
 	return lastLine;
 }
@@ -49,8 +50,6 @@ int logCommit(std::string msg) {
 		perror("Failed to open log");
 		return 1;
 	}
-
-	isNewDay(logFileName);
 
 	auto now = std::chrono::system_clock::now();
 	auto nowT = std::chrono::system_clock::to_time_t(now);
