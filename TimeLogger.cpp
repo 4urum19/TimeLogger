@@ -73,7 +73,7 @@ int printLog(std::string date) {
 	std::string line;
 	std::getline(logFile, line);
 
-	std::regex reg(R"(\[(.+)\] \[(.+)\] '(.*?)')");
+	std::regex reg(R"(\[(.+)\] \[(.+)\] '(.*)')");
 	std::smatch match;
 	regex_match(line, match, reg);
 
@@ -93,6 +93,7 @@ int printLog(std::string date) {
 		if (logFile.eof()) break;
 	}
 	std::cout << oss.str();
+	oss.flush();
 	return 0;
 }
 
