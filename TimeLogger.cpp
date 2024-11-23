@@ -88,9 +88,14 @@ int printLog(std::string date) {
     	}
  			prevMatch = copySmatch(match);
 
- 			oss << std::setw(8) << std::setfill(' ') << match[2] << " | " 
- 					 << timeSpent << " | "
-					<< match[3] << '\n';
+ 			oss << std::setw(8) << std::setfill(' ') << match[2] << " | ";
+ 			if (!timeSpent.empty()) { 
+ 				oss << timeSpent << " | ";
+		 	}
+		 	else {
+		 		oss << std::setw(11) << std::setfill(' ') << " | ";
+		 	}
+			oss << match[3] << '\n';
     }
 		if (logFile.eof()) break;
 	} while(std::getline(logFile, line));
