@@ -9,7 +9,7 @@
 #include <sys/wait.h>
 #include <filesystem>
 
-bool isNewDay(const std::string logFileName) {
+bool isNewDay(const std::string& logFileName) {
 	std::fstream logFile(logFileName, std::ios_base::ate);
 	if (!logFile.is_open()) {
 		perror("Failed to open log");
