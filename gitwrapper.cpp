@@ -60,7 +60,8 @@ std::string getCurrentTime() {
 
 	std::ostringstream oss;
 	oss << localTime.tm_hour << ':'
-			<< localTime.tm_min;
+			<< localTime.tm_min << ':'
+			<< localTime.tm_sec;
 	return oss.str();
 }
 
