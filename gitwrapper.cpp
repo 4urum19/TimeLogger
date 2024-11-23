@@ -9,6 +9,21 @@
 #include <sys/wait.h>
 #include <filesystem>
 
+bool isNewDay(const std::string logFileName) {
+	std::fstream logFile(logFileName, std::ios_base::ate);
+	if (!logFile.is_open()) {
+		perror("Failed to open log");
+		return false;
+	}	
+
+	std::string lastLine;
+	std::getline(logFile, lastLine);
+	std::cout << lastLine << '\n';
+
+
+	return true;
+}
+
 int logCommit(std::string msg) {
 	auto execPath = std::filesystem::canonical("/proc/self/exe").parent_path();
 	std::string logFileName = execPath.string() + "/log.txt";
@@ -18,6 +33,8 @@ int logCommit(std::string msg) {
 		perror("Failed to open log");
 		return 1;
 	}
+
+	isNewDay(logFileName);
 
 	auto now = std::chrono::system_clock::now();
 	auto nowT = std::chrono::system_clock::to_time_t(now);
@@ -38,10 +55,9 @@ int logCommit(std::string msg) {
 		curTime = match[3];
 	}
 
-	std::cout << curDate << '|' << curTime << '\n';
 
 
-	logFile << '[' << nowStr << "] '" << msg << "'\n";
+	logFile << '[' << curTime << "] '" << msg << "'\n";
 	logFile.close();
 
 	std::cerr << "Added:\n";
