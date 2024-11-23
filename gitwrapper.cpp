@@ -30,12 +30,12 @@ int logCommit(std::string msg) {
 		nowStr.pop_back();
 	}
 
-	std::regex reg(R"([A-Za-z]+ ([A-Za-z]+ [0-9]+) ([0-9:]+) ([0-9]+))");
+	std::regex reg(R"([A-Za-z]+ ([A-Za-z]+) ([0-9]+) ([0-9:]+) ([0-9]+))");
 	std::smatch match;
 	if (std::regex_match(nowStr, match, reg)) {
 		std::cout << "enter reg";
-		curDate = (std::string)match[1] + " " + (std::string)match[3];
-		curTime = match[2];
+		curDate = (std::string)match[2] + " " + (std::string)match[1] + " " + (std::string)match[4];
+		curTime = match[3];
 	}
 
 	std::cout << curDate << '|' << curTime << '\n';
