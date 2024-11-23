@@ -23,7 +23,6 @@ int printLog(std::string date) {
 
 	std::fstream logFile(logFileName, std::ios_base::in);
 	std::string line;
-	std::getline(logFile, line);
 
 	std::regex reg(R"(\[(.+)\] \[(.+)\] '(.*)')");
 	std::smatch match;
@@ -56,7 +55,7 @@ int main(int argc, char* argv[]) {
 
 	std::string date = getCurrentDate();
 	std::string testDate = "23-11-2030";
-	printLog(testDate);
+	printLog(date);
 
 	printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 	return 0;
