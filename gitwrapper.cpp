@@ -15,6 +15,7 @@ std::string isNewDay(std::string logFileName) {
 		perror("Failed to open log");
 		return "";
 	}
+	std::cout << "AAA\n";
 
   std::string lastLine = "";
   if (logFile.tellg() > 0) {
