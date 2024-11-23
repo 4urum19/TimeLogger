@@ -8,6 +8,7 @@
 #include <regex>
 #include <sys/wait.h>
 #include <filesystem>
+#include <iomanip>
 
 std::string getLastLine(std::string logFileName) {
 	std::fstream logFile(logFileName, std::ios_base::in);
@@ -47,9 +48,9 @@ std::string getCurrentDate() {
 	localtime_r(&now, &localTime);
 
 	std::ostringstream oss;
-	oss << localTime.tm_mday << '-' 
-			<< (localTime.tm_mon + 1) << '-' 
-			<< (localTime.tm_year + 1900);
+	oss << std::setw(2) << std::setfill('0') << localTime.tm_mday << '-' 
+			<< std::setw(2) << std::setfill('0') << (localTime.tm_mon + 1) << '-' 
+			<< std::setw(4) << std::setfill('0') << (localTime.tm_year + 1900);
 	return oss.str();
 }
 
@@ -59,9 +60,9 @@ std::string getCurrentTime() {
 	localtime_r(&now, &localTime);
 
 	std::ostringstream oss;
-	oss << localTime.tm_hour << ':'
-			<< localTime.tm_min << ':'
-			<< localTime.tm_sec;
+	oss << std::setw(2) << std::setfill('0') << localTime.tm_hour << ':'
+			<< std::setw(2) << std::setfill('0') << localTime.tm_min << ':'
+			<< std::setw(2) << std::setfill('0') << localTime.tm_sec;
 	return oss.str();
 }
 

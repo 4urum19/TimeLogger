@@ -3,6 +3,7 @@
 #include <regex>
 #include <ctime>
 #include <filesystem>
+#include <iomanip>
 
 // std::string timeSpent(
 // 	const std::time_t nowTimeT, 
@@ -58,12 +59,11 @@ std::string getCurrentDate() {
 	localtime_r(&now, &localTime);
 
 	std::ostringstream oss;
-	oss << localTime.tm_mday << '-' 
-			<< (localTime.tm_mon + 1) << '-' 
-			<< (localTime.tm_year + 1900);
+	oss << std::setw(2) << std::setfill('0') << localTime.tm_mday << '-' 
+			<< std::setw(2) << std::setfill('0') << (localTime.tm_mon + 1) << '-' 
+			<< std::setw(4) << std::setfill('0') << (localTime.tm_year + 1900);
 	return oss.str();
 }
-
 
 int printLog(std::string date) {
 	auto execPath = std::filesystem::canonical("/proc/self/exe").parent_path();
@@ -80,13 +80,15 @@ int printLog(std::string date) {
 	while (match[1] != date) {
 		regex_match(line, match, reg);
 		std::getline(logFile, line);
+		if (logFile.eof()) break;
 	}
 	std::cout << match[1] << ":\n";
 
 	while (match[1] == date) {
 		regex_match(line, match, reg);
-		std::cout << match[2] << ": " << match[3] << '\n';
+		std::cout << match[2] << "|" << match[3] << '\n';
 		std::getline(logFile, line);
+		if (logFile.eof()) break;
 	}
 	return 0;
 }
