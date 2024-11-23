@@ -26,7 +26,11 @@ int logCommit(std::string msg) {
 	std::string curDate;
 	std::string curTime;
 
-	std::cout << nowStr << '\n';
+	if (!nowStr.empty() && nowStr.back() == '\n') {
+		nowStr.pop_back();
+	}
+
+		std::cout << nowStr << '\n';
 
 	std::regex reg(R"(([A-Za-z]+ [A-Za-z]+ [0-9]+) ([0-9:]+) ([0-9]+))");
 	std::smatch match;
@@ -38,10 +42,6 @@ int logCommit(std::string msg) {
 
 	std::cout << curDate << '|' << curTime << '\n';
 
-
-	if (!nowStr.empty() && nowStr.back() == '\n') {
-		nowStr.pop_back();
-	}
 
 	logFile << '[' << nowStr << "] '" << msg << "'\n";
 	logFile.close();
