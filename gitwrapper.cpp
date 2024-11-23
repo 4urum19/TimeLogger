@@ -77,11 +77,11 @@ int logCommit(std::string msg) {
 	std::string curDate = getCurrentDate();
 	std::string curTime = getCurrentTime();
 
-	logFile << '[' << curDate << "] '" << curTime << "] '" << msg << "'\n";
+	logFile << '[' << curDate << "] [" << curTime << "] '" << msg << "'\n";
 	logFile.close();
 
 	std::cerr << "Added:\n";
-	std::cerr << '[' << curDate << "] '" << curTime << "] '" << msg << "'\n";
+	std::cerr << '[' << curDate << "] [" << curTime << "] '" << msg << "'\n";
 
 	return 0;
 }
