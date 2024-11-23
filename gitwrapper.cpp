@@ -82,9 +82,6 @@ int logCommit(std::string msg) {
 	logFile << '[' << curDate << "] [" << curTime << "] '" << msg << "'\n";
 	logFile.close();
 
-	std::cerr << "Added:\n";
-	std::cerr << '[' << curDate << "] [" << curTime << "] '" << msg << "'\n";
-
 	return 0;
 }
 
