@@ -20,13 +20,13 @@ std::string isNewDay(std::string logFileName) {
 
 	logFile.seekg(0, std::ios_base::end);
 	auto pos = logFile.tellg();
-	pos -= 1;
+	pos -= 2;
 	while(pos >= 0) {
 		logFile.seekg(pos);
 		char c;
 		logFile.get(c);
 		std::cout << c;
-		if (c == '\n' && pos != std::ios_base::end) {
+		if (c == '\n') {
 			logFile.seekg(pos);
 			break;
 		}
