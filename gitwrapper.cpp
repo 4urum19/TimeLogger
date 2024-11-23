@@ -26,7 +26,7 @@ int logCommit(std::string msg) {
 	std::string curDate;
 	std::string curTime;
 
-	std::regex reg(R"((\w+ \w+ 0\d+) ([0-9:]+))");
+	std::regex reg(R"((\w+ \w+ \d+) ([0-9:]+))");
 	std::smatch match;
 	if (std::regex_match(nowStr, match, reg)) {
 		curDate = match[1];
