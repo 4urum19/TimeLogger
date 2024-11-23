@@ -19,18 +19,18 @@ std::string isNewDay(std::string logFileName) {
 	}
 
 	logFile.seekg(0, std::ios_base::end);
-	auto pos = logFile.tellg() - static_cast<std::iostream::pos_type>(1);
+	auto pos = logFile.tellg() - 1;
 	while(pos >= 0) {
 		logFile.seekg(pos);
 		char c;
 		logFile.get(c);
 		std::cout << c << ' ';
 		if (c == '\n') {
+			logFile.seekg(pos);
 			break;
 		}
 		pos -= 1;
 	}
-	logFile.seekg(pos);
 	std::getline(logFile, lastLine);
 
   std::cout << lastLine << '\n';
