@@ -24,6 +24,7 @@ std::string isNewDay(std::string logFileName) {
 		logFile.seekg(pos);
 		char c;
 		logFile.get(c);
+		std::cout << c << ' ';
 		if (c == '\n') {
 			break;
 		}
