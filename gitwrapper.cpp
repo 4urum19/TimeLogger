@@ -41,6 +41,16 @@ std::string getLastLine(std::string logFileName) {
 	return lastLine;
 }
 
+std::string getCurrentDate() {
+	std::time_t now = std::time(NULL);
+	std::tm localTime;
+	localtime_r(&now, &localTime);
+
+	std::ostringstream oss;
+	oss << localTime.tm_mday << '-' << localTime.tm_mon << '-' << (localTime.tm_year + 1900);
+	return oss.str();
+}
+
 int logCommit(std::string msg) {
 	auto execPath = std::filesystem::canonical("/proc/self/exe").parent_path();
 	std::string logFileName = execPath.string() + "/log.txt";
@@ -55,7 +65,8 @@ int logCommit(std::string msg) {
 	auto nowT = std::chrono::system_clock::to_time_t(now);
 	
 	std::string nowStr = std::ctime(&nowT);
-	std::string curDate;
+	std::string curDate = getCurrentDate();
+	std::cout << curDate << '\n';
 	std::string curTime;
 
 	if (!nowStr.empty() && nowStr.back() == '\n') {
@@ -68,7 +79,6 @@ int logCommit(std::string msg) {
 		curDate = (std::string)match[2] + " " + (std::string)match[1] + " " + (std::string)match[4];
 		curTime = match[3];
 	}
-
 
 	logFile << '[' << curTime << "] '" << msg << "'\n";
 	logFile.close();
