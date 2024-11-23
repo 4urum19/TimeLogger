@@ -47,7 +47,20 @@ std::string getCurrentDate() {
 	localtime_r(&now, &localTime);
 
 	std::ostringstream oss;
-	oss << localTime.tm_mday << '-' << localTime.tm_mon << '-' << (localTime.tm_year + 1900);
+	oss << localTime.tm_mday << '-' 
+			<< (localTime.tm_mon + 1) << '-' 
+			<< (localTime.tm_year + 1900);
+	return oss.str();
+}
+
+std::string getCurrentTime() {
+	std::time_t now = std::time(NULL);
+	std::tm localTime;
+	localtime_r(&now, &localTime);
+
+	std::ostringstream oss;
+	oss << localTime.tm_hour << ':'
+			<< localTime.tm_min;
 	return oss.str();
 }
 
@@ -61,30 +74,14 @@ int logCommit(std::string msg) {
 		return 1;
 	}
 
-	auto now = std::chrono::system_clock::now();
-	auto nowT = std::chrono::system_clock::to_time_t(now);
-	
-	std::string nowStr = std::ctime(&nowT);
 	std::string curDate = getCurrentDate();
-	std::cout << curDate << '\n';
-	std::string curTime;
+	std::string curTime = getCurrentTime();
 
-	if (!nowStr.empty() && nowStr.back() == '\n') {
-		nowStr.pop_back();
-	}
-
-	std::regex reg(R"([A-Za-z]+ ([A-Za-z]+) ([0-9]+) ([0-9:]+) ([0-9]+))");
-	std::smatch match;
-	if (std::regex_match(nowStr, match, reg)) {
-		curDate = (std::string)match[2] + " " + (std::string)match[1] + " " + (std::string)match[4];
-		curTime = match[3];
-	}
-
-	logFile << '[' << curTime << "] '" << msg << "'\n";
+	logFile << '[' << curDate << "] '" << curTime << "] '" << msg << "'\n";
 	logFile.close();
 
 	std::cerr << "Added:\n";
-	std::cerr << '[' << nowStr << "] '" << msg << "'\n";
+	std::cerr << '[' << curDate << "] '" << curTime << "] '" << msg << "'\n";
 
 	return 0;
 }
