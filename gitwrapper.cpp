@@ -10,6 +10,8 @@
 #include <filesystem>
 
 bool isNewDay(std::string logFileName) {
+	std::cout << logFileName << '\n';
+
 	std::fstream logFile(logFileName, std::ios_base::ate);
 	if (!logFile.is_open()) {
 		perror("Failed to open log");
