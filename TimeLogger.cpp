@@ -37,14 +37,13 @@ int printLog(std::string date) {
 
 	std::ostringstream oss;
 	oss << match[1] << ":\n";
-	while (match[1] == date) {
+	do {
     if (regex_match(line, match, reg) && match[1] == date) {
  			oss << std::setw(8) << std::setfill(' ') << match[2] << " | " 
 					<< match[3] << '\n';
     }
-		std::getline(logFile, line);
 		if (logFile.eof()) break;
-	}
+	} while(std::getline(logFile, line));
 	std::cout << oss.str();
 	oss.flush();
 	return 0;
