@@ -118,7 +118,7 @@ int printLog(std::string date) {
 }
 
 void showHelp(const char* progName) {
-  std::cerr << progName << "{-d [DD-MM-YYYY]} {-b|-e} \n";
+  std::cerr << progName << "{-d DD-MM-YYYY} {-b|-e} {-n \"msg\"}\n";
   std::cerr <<
 R"HERE(
     -h		Print help menu
@@ -126,10 +126,11 @@ R"HERE(
     		Default huidige datum
     -b		Begin dag
     -e 		Eindig dag
+    -n		Nieuwe entry in de log
 )HERE";
 }
 
-int addMetaMsg(std::string msg) {
+int addNewLogEntry(std::string msg) {
 	auto execPath = std::filesystem::canonical("/proc/self/exe").parent_path();
 	std::string logFileName = execPath.string() + "/log.txt";
 
@@ -153,21 +154,25 @@ int main(int argc, char* argv[]) {
 
 	const char *progName = argv[0];
 	char c;
-	std::string date;
+	std::string str;
 	
-	while((c = getopt(argc, argv, "d:beh")) != -1) {
+	while((c = getopt(argc, argv, "d:behn:")) != -1) {
 		switch(c) {
 			case 'd':
-				date = optarg;
-				printLog(date);
+				str = optarg;
+				printLog(str);
 				printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 				return 0;
 			case 'b':
-				addMetaMsg("Start dag");
+				addNewLogEntry("Start dag");
 				printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 				return 0;
 			case 'e':
-				addMetaMsg("Eindig dag");
+				addNewLogEntry("Eindig dag");
+				return 0;
+			case 'n':
+				str = optarg;
+				addNewLogEntry(str);
 				return 0;
 			case '?':
 				std::cerr << "Onbekende optie\n\n";
@@ -178,8 +183,8 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	date = getCurrentDate();
-	printLog(date);
+	str = getCurrentDate();
+	printLog(str);
 
 	printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 	return 0;
