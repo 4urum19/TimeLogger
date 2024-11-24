@@ -123,7 +123,7 @@ void showHelp(const char* progName) {
 R"HERE(
     -h		Print help menu
     -d		Print log van een gegeven dag (DD-MM-YYYY format)
-    			Default huidige datum
+    		Default huidige datum
     -b		Begin dag
     -e 		Eindig dag
 )HERE";
