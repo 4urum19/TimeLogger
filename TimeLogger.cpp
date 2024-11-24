@@ -160,9 +160,11 @@ int main(int argc, char* argv[]) {
 			case 'd':
 				date = optarg;
 				printLog(date);
+				printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 				return 0;
 			case 'b':
 				addMetaMsg("Start dag");
+				printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 				return 0;
 			case 'e':
 				addMetaMsg("Eindig dag");
