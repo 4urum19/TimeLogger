@@ -155,11 +155,10 @@ int main(int argc, char* argv[]) {
 	char c;
 	std::string date;
 	
-	while(c = getopt(argc, argv, "d:beh")) {
+	while((c = getopt(argc, argv, "d:beh")) != -1) {
 		switch(c) {
 			case 'd':
 				date = optarg;
-				printf("%s\n", date);
 				printLog(date);
 				return 0;
 			case 'b':
