@@ -92,7 +92,7 @@ int printLog(std::string date) {
 
 	std::ostringstream oss;
 	std::vector<std::string> prevMatch;
-	oss << match[1] << ":\n";
+	oss << "\033[4m" << match[1] << std::setw(30) << std::setfill(' ') << "\033[0m\n";
 	do {
     if (regex_match(line, match, reg) && match[1] == date) {
     	std::string timeSpent = "";
