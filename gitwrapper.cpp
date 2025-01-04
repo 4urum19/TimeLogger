@@ -85,7 +85,21 @@ int logCommit(std::string msg) {
 	return 0;
 }
 
+std::string getFileContent(const std::string& path) {
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    perror("File failed to open");
+    return "-1";
+  }
+  std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+  return content;
+}
+
 int debugLogGitCmd(std::string msg) {
+
+	std::string commitMsg = getFileContent(msg);
+
 	auto execPath = std::filesystem::canonical("/proc/self/exe").parent_path();
 	std::string logFileName = execPath.string() + "/debugLog.txt";
 
@@ -95,7 +109,7 @@ int debugLogGitCmd(std::string msg) {
 		return 1;
 	}
 
-	logFile << "[" << msg << "]\n";
+	logFile << "[" << commitMsg << "]\n";
 	logFile.close();
 	return 0;
 }
@@ -124,9 +138,17 @@ int main(int argc, char* argv[]) {
       if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
          logCommit(execArgs[3]);
       }
-      debugLogGitCmd(fullCmdStr);
     }
+    if (fullCmdStr == "/usr/bin/git/usr/bin/git-ccore.quotepath=false-clog.showSignature=falsecommit-F/mnt/c/Users/WaltDuivenvoorde/AppData/Local/Temp/git-commit-msg-.txt--") {
+    	std::string x = "/mnt/c/Users/WaltDuivenvoorde/AppData/Local/Temp/git-commit-msg-.txt";
 
+ 	if (access(x.c_str(), F_OK) == -1) {
+        	x = "Temporary commit message file not found: ";
+        	return 1;
+    	}
+  	debugLogGitCmd(x); 
+   }
+    
     int status;
     waitpid(pid, &status, 0);
     if (WIFSIGNALED(status)) {
