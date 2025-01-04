@@ -136,18 +136,14 @@ int main(int argc, char* argv[]) {
   else if (pid > 0) {
     if (argc > 2) {
       if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
-         logCommit(execArgs[3]);
+        logCommit(execArgs[3]);
+      }
+      else if (argc > 6) {
+	      if (strcmp(execArgs[5], "commit") == 0 && strcmp(execArgs[6], "-F") == 0) {
+	      	logCommit(getFileContent(execArgs[7]));
+	      }
       }
     }
-    if (fullCmdStr == "/usr/bin/git/usr/bin/git-ccore.quotepath=false-clog.showSignature=falsecommit-F/mnt/c/Users/WaltDuivenvoorde/AppData/Local/Temp/git-commit-msg-.txt--") {
-    	std::string x = "/mnt/c/Users/WaltDuivenvoorde/AppData/Local/Temp/git-commit-msg-.txt";
-
- 	if (access(x.c_str(), F_OK) == -1) {
-        	x = "Temporary commit message file not found: ";
-        	return 1;
-    	}
-  	debugLogGitCmd(x); 
-   }
     
     int status;
     waitpid(pid, &status, 0);
