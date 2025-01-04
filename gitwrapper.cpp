@@ -85,6 +85,21 @@ int logCommit(std::string msg) {
 	return 0;
 }
 
+int debugLogGitCmd(std::string msg) {
+	auto execPath = std::filesystem::canonical("/proc/self/exe").parent_path();
+	std::string logFileName = execPath.string() + "/debugLog.txt";
+
+	std::fstream logFile(logFileName, std::ios_base::app);
+	if (!logFile.is_open()) {
+		perror("Failed to open debug log");
+		return 1;
+	}
+
+	logFile << "[" << msg << "]\n";
+	logFile.close();
+	return 0;
+}
+
 int main(int argc, char* argv[]) {
   std::vector<char*> execArgs;
   execArgs.push_back((char*)"/usr/bin/git"); 
@@ -93,6 +108,11 @@ int main(int argc, char* argv[]) {
   }
   execArgs.push_back(nullptr);
 
+  std::string fullCmdStr(execArgs[0]);
+  for (size_t i = 0; i < execArgs.size() - 1; i += 1) {
+    fullCmdStr.append((std::string)execArgs[i]);
+  }
+
   pid_t pid = fork();
   if (pid == 0) {
   	execvp(execArgs[0], execArgs.data());
@@ -100,12 +120,12 @@ int main(int argc, char* argv[]) {
   	return 1;
   }
   else if (pid > 0) {
-		if (argc > 2) {
-		  if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
-		  	std::cerr << "Logging " << execArgs[3] << '\n';
-		  	logCommit(execArgs[3]);
-			}
-		}
+    if (argc > 2) {
+      if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
+         logCommit(execArgs[3]);
+      }
+      debugLogGitCmd(fullCmdStr);
+    }
 
     int status;
     waitpid(pid, &status, 0);
