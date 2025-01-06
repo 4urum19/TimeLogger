@@ -150,8 +150,6 @@ int addNewLogEntry(std::string msg) {
 }
 
 int main(int argc, char* argv[]) {
-	clock_t tStart = clock();
-
 	const char *progName = argv[0];
 	char c;
 	std::string str;
@@ -161,11 +159,9 @@ int main(int argc, char* argv[]) {
 			case 'd':
 				str = optarg;
 				printLog(str);
-				printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 				return 0;
 			case 'b':
 				addNewLogEntry("Start dag");
-				printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 				return 0;
 			case 'e':
 				addNewLogEntry("Eindig dag");
@@ -186,6 +182,5 @@ int main(int argc, char* argv[]) {
 	str = getCurrentDate();
 	printLog(str);
 
-	printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 	return 0;
 }
