@@ -122,37 +122,36 @@ int main(int argc, char* argv[]) {
   }
   execArgs.push_back(nullptr);
 
-  std::string fullCmdStr(execArgs[0]);
-  for (size_t i = 0; i < execArgs.size() - 1; i += 1) {
-    fullCmdStr.append((std::string)execArgs[i]);
-  }
-
   pid_t pid = fork();
   if (pid == 0) {
   	execvp(execArgs[0], execArgs.data());
   	perror("Error executing git");
-  	return 1;
+  	_exit(127);
   }
   else if (pid > 0) {
     if (argc > 2) {
       if (strcmp(execArgs[1], "commit") == 0 && strcmp(execArgs[2], "-m") == 0) {
         logCommit(execArgs[3]);
-      }
+      } //CLI git integration
       else if (argc > 6) {
 	      if (strcmp(execArgs[5], "commit") == 0 && strcmp(execArgs[6], "-F") == 0) {
 	      	logCommit(getFileContent(execArgs[7]));
-	      }
+	      } //Jetbrain git integration
       }
     }
     
     int status;
     waitpid(pid, &status, 0);
     if (WIFSIGNALED(status)) {
-        std::cout << "Git was terminated by signal " << WTERMSIG(status) << "\n";
+        std::cerr << "Git was terminated by signal " << WTERMSIG(status) << "\n";
+    } 
+    else if (WIFEXITED(status)) {
+    	return WEXITSTATUS(status);
     }
   }
   else {
   	perror("Fork failed");
+  	return 1;
   } 
 
   return 0;
