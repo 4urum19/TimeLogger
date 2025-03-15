@@ -59,6 +59,16 @@ std::chrono::system_clock::time_point parseIcalDateTime(
   }
 }
 
+std::string formatToDate(const std::chrono::system_clock::time_point& date) {
+  std::time_t time = std::chrono::system_clock::to_time_t(date);
+  std::tm tm = *std::localtime(&time);
+
+  std::ostringstream oss;
+  oss << std::put_time(&tm, "%Y-%m-%d");
+
+  return oss.str();
+}
+
 void printEvents(const std::vector<Event> events) {
   for (const auto& event : events) {
     std::time_t startTime = std::chrono::system_clock::to_time_t(event.start);
@@ -88,13 +98,19 @@ int parse(const std::string& calendarPath) {
 
   for (std::sregex_iterator it = matchesBegin; it != matchesEnd; ++it) {
     std::smatch match = *it;
-    Event event;
+    
+    std::string timeZone = parseTimeZone(match[4].str());
+    std::chrono::system_clock::time_point start = parseIcalDateTime(match[5].str(), timeZone);
+    std::chrono::system_clock::time_point end = parseIcalDateTime(match[8].str(), timeZone);
+    if (formatToDate(start) == formatToDate(end)) {
+	    Event event;
 
-    event.title = match[2].str();
-    event.timeZone = parseTimeZone(match[4].str());
-    event.start = parseIcalDateTime(match[5].str(), event.timeZone);
-    event.end = parseIcalDateTime(match[8].str(), event.timeZone);
-    events.push_back(event);
+	    event.title = match[2].str();
+	    event.timeZone = timeZone;
+	    event.start = start;
+	    event.end = end;
+	    events.push_back(event);
+    }
   }
 
   printEvents(events);
@@ -108,43 +124,45 @@ int main(int argc, char* argv[]) {
 
 	std::cerr << calendarPath << '\n';
 
-  pid_t pid = fork();
-  if (pid == 0) {
-		const char* calendarPathCStr = calendarPath.c_str();
+  // pid_t pid = fork();
+  // if (pid == 0) {
+	// 	const char* calendarPathCStr = calendarPath.c_str();
 
-		int fd = open(calendarPathCStr, O_RDWR | O_CREAT | O_TRUNC, 0644);
+	// 	int fd = open(calendarPathCStr, O_RDWR | O_CREAT | O_TRUNC, 0644);
 
-	  if (dup2(fd, STDOUT_FILENO) == -1) {
-	    perror("dup2 failed");
-	    close(fd);
-	    return -1;	
-	  }
-	  close(fd); 
+	//   if (dup2(fd, STDOUT_FILENO) == -1) {
+	//     perror("dup2 failed");
+	//     close(fd);
+	//     return -1;	
+	//   }
+	//   close(fd); 
   	
-		std::vector<char*> execArgs;
-		execArgs.push_back((char*)"curl");
-		execArgs.push_back((char*)"[URL]"); 
-  	execArgs.push_back(NULL);
-  	execvp(execArgs[0], execArgs.data());
+	// 	std::vector<char*> execArgs;
+	// 	execArgs.push_back((char*)"curl");
+	// 	execArgs.push_back((char*)"[URL]"); 
+  // 	execArgs.push_back(NULL);
+  // 	execvp(execArgs[0], execArgs.data());
   	
-  	perror("Error executing curl");
-  	_exit(127);
-  }
-  else if (pid > 0) {
-    int status;
-    waitpid(pid, &status, 0);
-    parse(calendarPath);
-    if (WIFSIGNALED(status)) {
-      std::cerr << "Curl was terminated by signal " << WTERMSIG(status) << "\n";
-    } 
-    else if (WIFEXITED(status)) {
-    	return WEXITSTATUS(status);
-    }
-  }
-  else {
-  	perror("Fork failed");
-  	return 1;
-  } 
+  // 	perror("Error executing curl");
+  // 	_exit(127);
+  // }
+  // else if (pid > 0) {
+  //   int status;
+  //   waitpid(pid, &status, 0);
+  //   parse(calendarPath);
+  //   if (WIFSIGNALED(status)) {
+  //     std::cerr << "Curl was terminated by signal " << WTERMSIG(status) << "\n";
+  //   } 
+  //   else if (WIFEXITED(status)) {
+  //   	return WEXITSTATUS(status);
+  //   }
+  // }
+  // else {
+  // 	perror("Fork failed");
+  // 	return 1;
+  // } 
+
+  parse(calendarPath);
 
   return 0;
 }
