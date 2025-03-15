@@ -19,6 +19,10 @@ struct Event {
 	std::string timeZone;
 };
 
+bool isSameDate(const std::string& logEntry, const std::string& targetDate) {
+  return logEntry.find("[" + targetDate + "]") == 0;
+}
+
 std::string parseTimeZone(
 	const std::string &tz) 
 {
@@ -59,7 +63,7 @@ std::chrono::system_clock::time_point parseIcalDateTime(
   }
 }
 
-std::string formatToDate(const std::chrono::system_clock::time_point& date) {
+std::string formatToDateYmd(const std::chrono::system_clock::time_point& date) {
   std::time_t time = std::chrono::system_clock::to_time_t(date);
   std::tm tm = *std::localtime(&time);
 
@@ -68,6 +72,27 @@ std::string formatToDate(const std::chrono::system_clock::time_point& date) {
 
   return oss.str();
 }
+
+std::string formatToDatedmY(const std::chrono::system_clock::time_point& date) {
+  std::time_t time = std::chrono::system_clock::to_time_t(date);
+  std::tm tm = *std::localtime(&time);
+
+  std::ostringstream oss;
+  oss << std::put_time(&tm, "%d-%m-%Y");
+
+  return oss.str();
+}
+
+std::string formatToHMS(const std::chrono::system_clock::time_point& time) {
+	std::time_t t = std::chrono::system_clock::to_time_t(time);
+  std::tm tm = *std::localtime(&t);
+
+  std::ostringstream oss;
+  oss << std::put_time(&tm, "%H:%M:%S");
+
+  return oss.str();
+}
+
 
 void printEvents(const std::vector<Event> events) {
   for (const auto& event : events) {
@@ -79,11 +104,14 @@ void printEvents(const std::vector<Event> events) {
   }
 }
 
-int parse(const std::string& calendarPath) {
+std::vector<Event> parse(
+	const std::string& calendarPath,
+	const std::string date) 
+{
 	std::ifstream calendarFile(calendarPath);
 	if (!calendarFile.is_open()) {
 		perror("Failed to open calendar file");
-		return 1;
+		return std::vector<Event>();
 	}
 
 	std::ostringstream oss;
@@ -102,7 +130,10 @@ int parse(const std::string& calendarPath) {
     std::string timeZone = parseTimeZone(match[4].str());
     std::chrono::system_clock::time_point start = parseIcalDateTime(match[5].str(), timeZone);
     std::chrono::system_clock::time_point end = parseIcalDateTime(match[8].str(), timeZone);
-    if (formatToDate(start) == formatToDate(end)) {
+
+    std::string startDate = formatToDateYmd(start);
+
+    if (date == date && startDate == formatToDateYmd(end)) {
 	    Event event;
 
 	    event.title = match[2].str();
@@ -115,7 +146,86 @@ int parse(const std::string& calendarPath) {
 
   printEvents(events);
 
-  return 0;
+  return events;
+}
+
+std::string startEventToLogEntry(const Event& event) {
+  std::ostringstream oss;
+  oss << "[" << formatToDatedmY(event.start) << ']'
+      << " [" << formatToHMS(event.start) << ']'
+      << " 'Start " << event.title << "'";
+  return oss.str();
+}
+
+std::string endEventToLogEntry(const Event& event) {  
+  std::ostringstream oss;
+  oss << "[" << formatToDatedmY(event.end) << ']'
+      << " [" << formatToHMS(event.end) << ']'
+      << " 'end " << event.title << "'";
+  return oss.str();
+}
+
+void insertEventsIntoLog(
+	const std::string& logPath, 
+  const std::vector<Event>& newEvents,
+  const std::string& targetDate) 
+{
+  std::string tempPath = logPath + ".tmp";
+  std::ofstream tempFile(tempPath);
+  
+  std::vector<std::string> dateEntries;
+  
+  std::ifstream originalFile(logPath);
+  std::string line;
+  bool processingTargetDate = false;
+  while (std::getline(originalFile, line)) {
+    if (isSameDate(line, targetDate)) {
+      if (!processingTargetDate) {
+        processingTargetDate = true;
+        dateEntries.clear();
+      }
+      dateEntries.push_back(line);
+    } 
+    else {
+      if (processingTargetDate) {
+        processingTargetDate = false;
+        
+        std::vector<std::string> newEntries;
+        for (const auto& event : newEvents) {
+          newEntries.push_back(startEventToLogEntry(event));
+          newEntries.push_back(endEventToLogEntry(event));
+        }
+        
+        dateEntries.insert(dateEntries.end(), newEntries.begin(), newEntries.end());
+        std::sort(dateEntries.begin(), dateEntries.end());
+
+        for (const auto& entry : dateEntries) {
+          tempFile << entry << '\n';
+        }
+      }
+      tempFile << line << '\n';
+    }
+  }
+
+  if (processingTargetDate) {
+    std::vector<std::string> newEntries;
+    for (const auto& event : newEvents) {
+      newEntries.push_back(startEventToLogEntry(event));
+      newEntries.push_back(endEventToLogEntry(event));
+    }
+    
+    dateEntries.insert(dateEntries.end(), newEntries.begin(), newEntries.end());
+    std::sort(dateEntries.begin(), dateEntries.end());
+
+    for (const auto& entry : dateEntries) {
+    	std::cerr << entry << '\n';
+      tempFile << entry << '\n';
+	  }
+  }
+
+  originalFile.close();
+  tempFile.close();
+  std::filesystem::rename(tempPath, logPath);
 }
 
 int main(int argc, char* argv[]) {
@@ -124,45 +234,49 @@ int main(int argc, char* argv[]) {
 
 	std::cerr << calendarPath << '\n';
 
-  // pid_t pid = fork();
-  // if (pid == 0) {
-	// 	const char* calendarPathCStr = calendarPath.c_str();
+	/*
+  pid_t pid = fork();
+  if (pid == 0) {
+		const char* calendarPathCStr = calendarPath.c_str();
 
-	// 	int fd = open(calendarPathCStr, O_RDWR | O_CREAT | O_TRUNC, 0644);
+		int fd = open(calendarPathCStr, O_RDWR | O_CREAT | O_TRUNC, 0644);
 
-	//   if (dup2(fd, STDOUT_FILENO) == -1) {
-	//     perror("dup2 failed");
-	//     close(fd);
-	//     return -1;	
-	//   }
-	//   close(fd); 
+	  if (dup2(fd, STDOUT_FILENO) == -1) {
+	    perror("dup2 failed");
+	    close(fd);
+	    return -1;	
+	  }
+	  close(fd); 
   	
-	// 	std::vector<char*> execArgs;
-	// 	execArgs.push_back((char*)"curl");
-	// 	execArgs.push_back((char*)"[URL]"); 
-  // 	execArgs.push_back(NULL);
-  // 	execvp(execArgs[0], execArgs.data());
+		std::vector<char*> execArgs;
+		execArgs.push_back((char*)"curl");
+		execArgs.push_back((char*)"[URL]"); 
+  	execArgs.push_back(NULL);
+  	execvp(execArgs[0], execArgs.data());
   	
-  // 	perror("Error executing curl");
-  // 	_exit(127);
-  // }
-  // else if (pid > 0) {
-  //   int status;
-  //   waitpid(pid, &status, 0);
-  //   parse(calendarPath);
-  //   if (WIFSIGNALED(status)) {
-  //     std::cerr << "Curl was terminated by signal " << WTERMSIG(status) << "\n";
-  //   } 
-  //   else if (WIFEXITED(status)) {
-  //   	return WEXITSTATUS(status);
-  //   }
-  // }
-  // else {
-  // 	perror("Fork failed");
-  // 	return 1;
-  // } 
+  	perror("Error executing curl");
+  	_exit(127);
+  }
+  else if (pid > 0) {
+    int status;
+    waitpid(pid, &status, 0);
+    parse(calendarPath);
+    if (WIFSIGNALED(status)) {
+      std::cerr << "Curl was terminated by signal " << WTERMSIG(status) << "\n";
+    } 
+    else if (WIFEXITED(status)) {
+    	return WEXITSTATUS(status);
+    }
+  }
+  else {
+  	perror("Fork failed");
+  	return 1;
+  } 
+  */
 
-  parse(calendarPath);
+	//Current day for now as, later add support for opt arguments and default current day
+  std::vector<Event> parsedEvents = parse(calendarPath, "15-03-2025");
+  insertEventsIntoLog(execPath.string() + "/log.txt", parsedEvents, "15-03-2025");
 
   return 0;
 }
