@@ -12,7 +12,6 @@ std::vector<std::string> copySmatch(std::smatch match) {
 	for (size_t i = 0; i < match.size(); i += 1) {
 		v.push_back(match[i]);
 	}
-	std::cout << "x\n";
 	return v;
 }
 
