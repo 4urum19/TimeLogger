@@ -11,6 +11,7 @@
 #include <sys/wait.h>
 #include <iomanip>
 #include <fcntl.h>
+#include <utility>
 
 struct Event {
 	std::string title;
@@ -19,50 +20,76 @@ struct Event {
 	std::string timeZone;
 };
 
+std::vector<int> splitDate(std::string date, char delim) {
+  std::vector<int> tokens;
+  size_t pos = 0;
+  std::string token;
+  while ((pos = date.find(delim)) != std::string::npos) {
+    token = date.substr(0, pos);
+    tokens.push_back(std::stoi(token));
+    date.erase(0, pos + 1);
+  }
+  tokens.push_back(std::stoi(date));
+
+  return tokens;
+}
+
 bool isSameDate(const std::string& logEntry, const std::string& targetDate) {
   return logEntry.find("[" + targetDate + "]") == 0;
 }
 
-std::string parseTimeZone(
-	const std::string &tz) 
-{
-	size_t tzPos = tz.find("TZID=");
-	if (tzPos != std::string::npos) {
-		return tz.substr(5, tz.length());
+bool isLaterDate(const std::string& logEntry, const std::string& targetDate) {
+	char delim = '-';
+
+	std::vector<int> logDate = splitDate(logEntry.substr(1, 11), delim);
+	if (logDate.size() != 3) {
+		return false;
 	}
 
-	return "UTC";
+	std::vector<int> target = splitDate(targetDate, delim);
+	if (target.size() != 3) {
+		return false;
+	}	
+
+  if (logDate[0] > target[0]) {
+    return true;
+  } 
+  else if (logDate[1] > target[1] && logDate[0] == target[0]) {
+    return true;
+  } 
+  else if (logDate[2] > target[2] && logDate[1] == target[1] && logDate[0] == target[0]) {
+    return true;
+  }
+	return false;
 }
 
-std::chrono::system_clock::time_point parseIcalDateTime(
-	const std::string& dateStr, 
-	const std::string& tz = "UTC") 
-{
-  std::tm tm = {};
-  std::istringstream iss(dateStr);
-  
-  bool utc = !dateStr.empty() && dateStr.back() == 'Z';
-  std::string format = utc ? "%Y%m%dT%H%M%SZ" : "%Y%m%dT%H%M%S";
-  
-  iss >> std::get_time(&tm, format.c_str());
-  if (iss.fail()) {
-     throw std::runtime_error("Failed to parse datetime: " + dateStr);
-  }
+bool isEarlierDate(const std::string& logEntry, const std::string& targetDate) {
+	char delim = '-';
 
-  if (utc) {
-    return std::chrono::sys_seconds(std::chrono::seconds(std::mktime(&tm)));
-  } else {
-    try {
-      const std::chrono::time_zone* timeZone = std::chrono::locate_zone(tz);
-      std::chrono::local_seconds lt{std::chrono::seconds(std::mktime(&tm))};
-      return timeZone->to_sys(lt);
-    } catch (const std::runtime_error& e) {
-      std::cerr << "Warning: Unknown timezone " << tz << ", defaulting to UTC\n";
-      return std::chrono::sys_seconds(std::chrono::seconds(std::mktime(&tm)));
-    }
+	std::vector<int> logDate = splitDate(logEntry.substr(1, 11), delim);
+	if (logDate.size() != 3) {
+		return false;
+	}
+
+	std::vector<int> target = splitDate(targetDate, delim);
+	if (target.size() != 3) {
+		return false;
+	}	
+
+  if (logDate[0] < target[0]) {
+    return true;
+  } 
+  else if (logDate[1] < target[1] && logDate[0] == target[0]) {
+    return true;
+  } 
+  else if (logDate[2] < target[2] && logDate[1] == target[1] && logDate[0] == target[0]) {
+    return true;
   }
+	return false;
 }
 
+/* Helper functions to format time_points
+*/
 std::string formatToDateYmd(const std::chrono::system_clock::time_point& date) {
   std::time_t time = std::chrono::system_clock::to_time_t(date);
   std::tm tm = *std::localtime(&time);
@@ -93,6 +120,23 @@ std::string formatToHMS(const std::chrono::system_clock::time_point& time) {
   return oss.str();
 }
 
+/*	Helper functions to convert events into log entries
+*/
+std::string startEventToLogEntry(const Event& event) {
+  std::ostringstream oss;
+  oss << "[" << formatToDatedmY(event.start) << ']'
+      << " [" << formatToHMS(event.start) << ']'
+      << " 'Start " << event.title << "'";
+  return oss.str();
+}
+
+std::string endEventToLogEntry(const Event& event) {  
+  std::ostringstream oss;
+  oss << "[" << formatToDatedmY(event.end) << ']'
+      << " [" << formatToHMS(event.end) << ']'
+      << " 'end " << event.title << "'";
+  return oss.str();
+}
 
 void printEvents(const std::vector<Event> events) {
   for (const auto& event : events) {
@@ -104,6 +148,58 @@ void printEvents(const std::vector<Event> events) {
   }
 }
 
+/* Parse if possible to a timezone
+ * Default return is "UTC"
+*/
+std::string parseTimeZone(
+	const std::string &tz) 
+{
+	size_t tzPos = tz.find("TZID=");
+	if (tzPos != std::string::npos) {
+		return tz.substr(5, tz.length());
+	}
+
+	return "UTC";
+}
+
+/* Parse string to system time seconds
+ * quite a mess of c_time & chrono types
+*/
+std::chrono::system_clock::time_point parseIcalDateTime(
+	const std::string& dateStr, 
+	const std::string& tz = "UTC") 
+{
+  std::tm tm = {};
+  std::istringstream iss(dateStr);
+  
+  bool utc = !dateStr.empty() && dateStr.back() == 'Z';
+  std::string format = utc ? "%Y%m%dT%H%M%SZ" : "%Y%m%dT%H%M%S";
+  
+  iss >> std::get_time(&tm, format.c_str());
+  if (iss.fail()) {
+     throw std::runtime_error("Failed to parse datetime: " + dateStr);
+  }
+
+  if (utc) {
+    return std::chrono::sys_seconds(std::chrono::seconds(std::mktime(&tm)));
+  } 
+  else {
+    try {
+      const std::chrono::time_zone* timeZone = std::chrono::locate_zone(tz);
+      std::chrono::local_seconds lt{std::chrono::seconds(std::mktime(&tm))};
+      return timeZone->to_sys(lt);
+    } 
+    catch (const std::runtime_error& e) {
+      std::cerr << "Warning: Unknown timezone " << tz << ", defaulting to UTC\n";
+      return std::chrono::sys_seconds(std::chrono::seconds(std::mktime(&tm)));
+    }
+  }
+}
+
+/*	Parse the ics file into a vector of events for a given date
+ *  Note: std::regex doesn't support multiline expression declaration
+ *  -> So don't make the regex too complicated or switch to another parser
+*/
 std::vector<Event> parse(
 	const std::string& calendarPath,
 	const std::string date) 
@@ -149,22 +245,10 @@ std::vector<Event> parse(
   return events;
 }
 
-std::string startEventToLogEntry(const Event& event) {
-  std::ostringstream oss;
-  oss << "[" << formatToDatedmY(event.start) << ']'
-      << " [" << formatToHMS(event.start) << ']'
-      << " 'Start " << event.title << "'";
-  return oss.str();
-}
-
-std::string endEventToLogEntry(const Event& event) {  
-  std::ostringstream oss;
-  oss << "[" << formatToDatedmY(event.end) << ']'
-      << " [" << formatToHMS(event.end) << ']'
-      << " 'end " << event.title << "'";
-  return oss.str();
-}
-
+/*	Insert the events for a given date into the log
+ *	by reading line by line & copying the lines from the original log
+ *	into a temp file, inserting when the target date is reached
+*/
 void insertEventsIntoLog(
 	const std::string& logPath, 
   const std::vector<Event>& newEvents,
@@ -178,8 +262,9 @@ void insertEventsIntoLog(
   std::ifstream originalFile(logPath);
   std::string line;
   bool processingTargetDate = false;
+
   while (std::getline(originalFile, line)) {
-    if (isSameDate(line, targetDate)) {
+    if (isSameDate(line, targetDate) || isLaterDate(line, targetDate) || isEarlierDate(line, targetDate)) {
       if (!processingTargetDate) {
         processingTargetDate = true;
         dateEntries.clear();
@@ -218,7 +303,6 @@ void insertEventsIntoLog(
     std::sort(dateEntries.begin(), dateEntries.end());
 
     for (const auto& entry : dateEntries) {
-    	std::cerr << entry << '\n';
       tempFile << entry << '\n';
 	  }
   }
