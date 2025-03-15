@@ -1,12 +1,12 @@
 CC = g++
 
-CompileParms = -c -Wall -std=c++17 -O2
+CompileParms = -c -Wall -std=c++23 -O2
 
 GIT_OBJS = gitwrapper.o
 TL_OBJS = TimeLogger.o
 CL_OBJS = CalendarParser.o
 
-all: git TimeLogger
+all: git TimeLogger CalendarParser
 
 git: $(GIT_OBJS)
 	$(CC) $(GIT_OBJS) -o git
