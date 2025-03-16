@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <fcntl.h>
 #include <utility>
+#include <getopt.h>
 
 struct Event {
 	std::string title = "";
@@ -310,6 +311,8 @@ void insertEventsIntoLog(
         
         dateEntries.insert(dateEntries.end(), newEntries.begin(), newEntries.end());
         std::sort(dateEntries.begin(), dateEntries.end());
+        auto lastUnique = std::unique(dateEntries.begin(), dateEntries.end());
+    		dateEntries.erase(lastUnique, dateEntries.end());
 
         for (const auto& entry : dateEntries) {
           tempFile << entry << '\n';
@@ -328,6 +331,8 @@ void insertEventsIntoLog(
     
     dateEntries.insert(dateEntries.end(), newEntries.begin(), newEntries.end());
     std::sort(dateEntries.begin(), dateEntries.end());
+    auto lastUnique = std::unique(dateEntries.begin(), dateEntries.end());
+    dateEntries.erase(lastUnique, dateEntries.end());
 
     for (const auto& entry : dateEntries) {
       tempFile << entry << '\n';
@@ -339,11 +344,57 @@ void insertEventsIntoLog(
   std::filesystem::rename(tempPath, logPath);
 }
 
+std::string getCurrentDate() {
+	std::time_t now = std::time(NULL);
+	std::tm localTime;
+	localtime_r(&now, &localTime);
+
+	std::ostringstream oss;
+	oss << std::setw(2) << std::setfill('0') << localTime.tm_mday << '-' 
+			<< std::setw(2) << std::setfill('0') << (localTime.tm_mon + 1) << '-' 
+			<< std::setw(4) << std::setfill('0') << (localTime.tm_year + 1900);
+	return oss.str();
+}
+
+void showHelp(const char* progName) {
+  std::cerr << progName << "{-d DD-MM-YYYY}\n";
+  std::cerr <<
+R"HERE(
+    -h		Print help menu
+    -d		Print log van een gegeven dag (DD-MM-YYYY format)
+    			Default huidige datum
+)HERE";
+}
+
+
 int main(int argc, char* argv[]) {
+	const char *progName = argv[0];
+	char c;
+	std::string date = getCurrentDate();
+	std::regex dmYPattern(R"(\d{2}-\d{2}-\d{4})");
+
+	while((c = getopt(argc, argv, "d:h:")) != -1) {
+		switch(c) {
+			case 'd':
+				date = optarg;
+				if (!std::regex_match(date, dmYPattern)) {
+					std::cerr << "Datum format matched niet";
+					return 1;
+				}
+				break;
+			case '?':
+				std::cerr << "Onbekende optie\n\n";
+			case 'h':
+			default:
+				showHelp(progName);
+				return 1;
+		}
+	}
+
 	auto execPath = std::filesystem::canonical("/proc/self/exe").parent_path();
 	std::string calendarPath = execPath.string() + "/calendar.ics";
 
-	std::cerr << calendarPath << '\n';
+	std::cerr << calendarPath << ' ' << date << '\n';
 
 	/*
   pid_t pid = fork();
@@ -385,9 +436,8 @@ int main(int argc, char* argv[]) {
   } 
   */
 
-	//Current day for now as, later add support for opt arguments and default current day
-  std::vector<Event> parsedEvents = parse(calendarPath, "15-03-2025");
-  insertEventsIntoLog(execPath.string() + "/log.txt", parsedEvents, "15-03-2025");
+  std::vector<Event> parsedEvents = parse(calendarPath, date);
+  //insertEventsIntoLog(execPath.string() + "/log.txt", parsedEvents, date);
 
   return 0;
 }
