@@ -17,19 +17,24 @@ struct Event {
 	std::string title;
 	std::chrono::system_clock::time_point start;
 	std::chrono::system_clock::time_point end;
-	std::string timeZone;
+	std::string timeZone = "";
 };
 
-std::vector<int> splitDate(std::string date, char delim) {
-  std::vector<int> tokens;
+template <typename T>
+std::vector<T> splitString(
+	std::string str, 
+	char delim,
+	std::function<T(const std::string&)> converter) 
+{
+  std::vector<T> tokens;
   size_t pos = 0;
   std::string token;
-  while ((pos = date.find(delim)) != std::string::npos) {
-    token = date.substr(0, pos);
-    tokens.push_back(std::stoi(token));
-    date.erase(0, pos + 1);
+  while ((pos = str.find(delim)) != std::string::npos) {
+    token = str.substr(0, pos);
+    tokens.push_back(converter(token));
+    str.erase(0, pos + 1);
   }
-  tokens.push_back(std::stoi(date));
+  tokens.push_back(converter(str));
 
   return tokens;
 }
@@ -39,14 +44,15 @@ bool isSameDate(const std::string& logEntry, const std::string& targetDate) {
 }
 
 bool isLaterDate(const std::string& logEntry, const std::string& targetDate) {
+	std::function converter = [](const std::string& str) { return std::stoi(str); };
 	char delim = '-';
 
-	std::vector<int> logDate = splitDate(logEntry.substr(1, 11), delim);
+	std::vector<int> logDate = splitString(logEntry.substr(1, 11), delim, converter);
 	if (logDate.size() != 3) {
 		return false;
 	}
 
-	std::vector<int> target = splitDate(targetDate, delim);
+	std::vector<int> target = splitString(targetDate, delim, converter);
 	if (target.size() != 3) {
 		return false;
 	}	
@@ -64,14 +70,15 @@ bool isLaterDate(const std::string& logEntry, const std::string& targetDate) {
 }
 
 bool isEarlierDate(const std::string& logEntry, const std::string& targetDate) {
+	std::function converter = [](const std::string& str) { return std::stoi(str); };
 	char delim = '-';
 
-	std::vector<int> logDate = splitDate(logEntry.substr(1, 11), delim);
+	std::vector<int> logDate = splitString(logEntry.substr(1, 11), delim, converter);
 	if (logDate.size() != 3) {
 		return false;
 	}
 
-	std::vector<int> target = splitDate(targetDate, delim);
+	std::vector<int> target = splitString(targetDate, delim, converter);
 	if (target.size() != 3) {
 		return false;
 	}	
@@ -144,7 +151,8 @@ void printEvents(const std::vector<Event> events) {
     std::time_t endTime = std::chrono::system_clock::to_time_t(event.end);
     std::cout << "Event:\t" << event.title << '\n'
               << "Start:\t" << std::ctime(&startTime)
-              << "End:\t" << std::ctime(&endTime) << '\n';
+              << "End:\t" << std::ctime(&endTime)
+              << "Timezone:\t" << event.timeZone << "\n\n";
   }
 }
 
@@ -197,8 +205,8 @@ std::chrono::system_clock::time_point parseIcalDateTime(
 }
 
 /*	Parse the ics file into a vector of events for a given date
- *  Note: std::regex doesn't support multiline expression declaration
- *  -> So don't make the regex too complicated or switch to another parser
+ *	line by line, possibly later simplify while loop
+ *	& add more conditions before events being pushed (status for example)
 */
 std::vector<Event> parse(
 	const std::string& calendarPath,
@@ -209,36 +217,55 @@ std::vector<Event> parse(
 		perror("Failed to open calendar file");
 		return std::vector<Event>();
 	}
-
-	std::ostringstream oss;
-	oss << calendarFile.rdbuf();
-	std::string calendarData = oss.str();
-
-	std::regex reg(R"(BEGIN:VEVENT[\s\S]*?(SUMMARY:(.*))[\s\S]*?(DTSTART;?(.*):([\dTZ]+))[\s\S]*?(DTEND;?(.*)?:([\dTZ]*))[\s\S]*?END:VEVENT)", std::regex::icase);
-
+	
 	std::vector<Event> events;
-  auto matchesBegin = std::sregex_iterator(calendarData.begin(), calendarData.end(), reg);
-  auto matchesEnd = std::sregex_iterator();
+	std::string line;
+	std::function converter = [](const std::string& str) { return str; };
 
-  for (std::sregex_iterator it = matchesBegin; it != matchesEnd; ++it) {
-    std::smatch match = *it;
-    
-    std::string timeZone = parseTimeZone(match[4].str());
-    std::chrono::system_clock::time_point start = parseIcalDateTime(match[5].str(), timeZone);
-    std::chrono::system_clock::time_point end = parseIcalDateTime(match[8].str(), timeZone);
+	while (std::getline(calendarFile, line)) {
+		if (line == "BEGIN:VEVENT") {
+			Event event;
+			
+			while (std::getline(calendarFile, line) && line != "END:VEVENT") {
+				std::vector<std::string> v = splitString(line, ':', converter);
+				if (v.size() < 2) {
+					continue;
+				}
 
-    std::string startDate = formatToDateYmd(start);
+				if (v[0] == "SUMMARY") {
+					event.title = v[1];
+				}
+				else if (v[0].rfind("DTSTART", 0) == 0) {
+					if (event.timeZone.empty()) {
+						std::vector<std::string> tzv = splitString(v[0], ';', converter);
+						if (tzv.size() > 1) {
+							event.timeZone = parseTimeZone(tzv[1]);
+						}
+						else {
+							event.timeZone = "UTC";
+						}
+					}
+					event.start = parseIcalDateTime(v[1], event.timeZone);
+				}
+				else if (v[0].rfind("DTEND", 0) == 0) {
+					if (event.timeZone.empty()) {
+						std::vector<std::string> tzv = splitString(v[0], ';', converter);
+						if (tzv.size() > 1) {
+							event.timeZone = parseTimeZone(tzv[1]);
+						}
+						else {
+							event.timeZone = "UTC";
+						}
+					}
+					event.end = parseIcalDateTime(v[1], event.timeZone);
+				}
+			}
 
-    if (date == date && startDate == formatToDateYmd(end)) {
-	    Event event;
-
-	    event.title = match[2].str();
-	    event.timeZone = timeZone;
-	    event.start = start;
-	    event.end = end;
-	    events.push_back(event);
-    }
-  }
+			if (date == formatToDatedmY(event.start) && formatToDatedmY(event.start) == formatToDatedmY(event.end)) {
+				events.push_back(event);
+			}
+		}
+	}
 
   printEvents(events);
 
